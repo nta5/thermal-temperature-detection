@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/linearLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="10dp"
+    tools:context=".MainActivity">
+
+    <!-- Title  -->
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/title_text"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Show SDK version  -->
+    <TextView
+        android:id="@+id/sdk_version"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sdk_version_text"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="@+id/textView"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <!-- Show SDK version  -->
+    <TextView
+        android:id="@+id/sdk_commit_hash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sdk_commit_hash_text"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="@+id/sdk_version"
+        app:layout_constraintTop_toBottomOf="@+id/sdk_version" />
+
+    <!-- Start / Stop discovery buttons  -->
+    <Button
+        android:id="@+id/start_discovery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="startDiscovery"
+        android:text="@string/start_discovery_text"
+        app:layout_constraintStart_toStartOf="@+id/sdk_commit_hash"
+        app:layout_constraintTop_toBottomOf="@+id/sdk_commit_hash" />
+
+    <Button
+        android:id="@+id/stop_discovery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="stopDiscovery"
+        android:text="@string/stop_discovery_text"
+        app:layout_constraintStart_toStartOf="@+id/start_discovery"
+        app:layout_constraintTop_toBottomOf="@+id/start_discovery" />
+
+    <TextView
+        android:id="@+id/discovery_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/discovery_status_text"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="@+id/stop_discovery"
+        app:layout_constraintTop_toBottomOf="@+id/stop_discovery" />
+
+    <!-- Connect to FLIR ONE / Emulators buttons  -->
+
+    <Button
+        android:id="@+id/connect_flir_one"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="connectFlirOne"
+        android:text="@string/connect_f1_text"
+        app:layout_constraintBaseline_toBaselineOf="@+id/connect_s1"
+        app:layout_constraintStart_toStartOf="@+id/discovery_status" />
+
+    <Button
+        android:id="@+id/connect_s1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="connectSimulatorOne"
+        android:text="@string/connect_sim1_text"
+        app:layout_constraintEnd_toEndOf="@+id/start_discovery"
+        app:layout_constraintStart_toEndOf="@+id/start_discovery"
+        app:layout_constraintTop_toBottomOf="@+id/discovery_status" />
+
+    <Button
+        android:id="@+id/connect_s2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="connectSimulatorTwo"
+        android:text="@string/connect_sim2_text"
+        app:layout_constraintBaseline_toBaselineOf="@+id/connect_s1"
+        app:layout_constraintStart_toEndOf="@+id/connect_s1" />
+
+
+    <Button
+        android:id="@+id/disconnect_any"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:onClick="disconnect"
+        android:text="@string/disconnect_text"
+        app:layout_constraintStart_toStartOf="@+id/connect_flir_one"
+        app:layout_constraintTop_toBottomOf="@+id/connect_flir_one" />
+
+    <TextView
+        android:id="@+id/device_info_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="@+id/disconnect_any"
+        app:layout_constraintTop_toBottomOf="@+id/disconnect_any" />
+
+    <TextView
+        android:id="@+id/connection_status_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/connection_status_text"
+        app:layout_constraintStart_toStartOf="@+id/disconnect_any"
+        app:layout_constraintTop_toBottomOf="@+id/device_info_text" />
+
+    <ImageView
+        android:id="@+id/msx_image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:contentDescription="image with IR and visual data mixed"
+        android:minWidth="50dp"
+        android:minHeight="50dp"
+        app:layout_constraintBottom_toTopOf="@+id/photo_image"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/connection_status_text" />
+
+    <ImageView
+        android:id="@+id/photo_image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:contentDescription="image with only visual image"
+        android:minWidth="50dp"
+        android:minHeight="50dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/msx_image" />
+
+    <Button
+        android:id="@+id/buttonNuc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="1dp"
+        android:onClick="performNuc"
+        android:text="NUC"
+        app:layout_constraintStart_toEndOf="@+id/disconnect_any"
+        app:layout_constraintTop_toBottomOf="@+id/connect_s2" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
