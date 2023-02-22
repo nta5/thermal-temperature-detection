@@ -1,10 +1,8 @@
 import cv2
 import numpy as np
 
-gray16_image = cv2.imread("download.jpeg", cv2.IMREAD_ANYDEPTH)
-
-# convert the gray16 image into a gray8
-gray8_image = np.uint8(gray16_image)
+# gray8_image = cv2.imread("download-grey.png", cv2.IMREAD_ANYDEPTH)
+gray8_image = cv2.imread("download.jpeg", cv2.IMREAD_ANYDEPTH)
 
 # load the haar cascade face detector
 haar_cascade_face = cv2.CascadeClassifier('haarcascade_frontalface_alt2.xml')
@@ -12,7 +10,7 @@ haar_cascade_face = cv2.CascadeClassifier('haarcascade_frontalface_alt2.xml')
 faces = haar_cascade_face.detectMultiScale(gray8_image, scaleFactor=1.1, minNeighbors=5, minSize=(10, 10))
 
 # fever temperature threshold in Celsius or Fahrenheit
-fever_temperature_threshold = 37.0
+fever_temperature_threshold = 38.0
 # fever_temperature_threshold = 99.0
 
 # loop over the bounding boxes to measure their temperature
@@ -22,42 +20,26 @@ for (x, y, w, h) in faces:
 
     # define the roi with a circle at the haar cascade origin coordinate
     # haar cascade center for the circle
-    haar_cascade_circle_origin = x + w // 2, y + h // 2
+    haar_cascade_circle_origin = x + w // 2, y + h // 4
 
     # circle radius
-    radius = w // 4
+    radius = 2
 
-    # get the 8 most significant bits of the gray16 image
-    gray16_high_byte = (np.right_shift(gray16_image, 8)).astype('uint8')
+    # The highest human temperature ever recorded is ~34 Celsius degree
+    TEMP_RANGE = 255 / 44
+    # print(gray8_image[x, y])
+    # print(gray8_image[x, y] / TEMP_RANGE)
+    # print(gray8_image[haar_cascade_circle_origin])
+    # print(gray8_image[haar_cascade_circle_origin] / TEMP_RANGE)
 
-    # get the 8 less significant bits of the gray16 image
-    gray16_low_byte = (np.left_shift(gray16_image, 8) / 256).astype('uint16')
-
-    # apply the mask to our 8 most significant bits
-    mask = np.zeros_like(gray16_high_byte)
-    cv2.circle(mask, haar_cascade_circle_origin, radius, (255, 255, 255), -1)
-    gray16_high_byte = np.bitwise_and(gray16_high_byte, mask)
-
-    # apply the mask to our 8 less significant bits
-    mask = np.zeros_like(gray16_low_byte)
-    cv2.circle(mask, haar_cascade_circle_origin, radius, (255, 255, 255), -1)
-    gray16_low_byte = np.bitwise_and(gray16_low_byte, mask)
-
-    # create / recompose our gray16 roi
-    gray16_roi = np.array(gray16_high_byte, dtype=np.uint16)
-    gray16_roi = gray16_roi * 256
-    gray16_roi = gray16_roi | gray16_low_byte
-
-    # estimate the face temperature by obtaining the higher value
-    higher_temperature = np.amax(gray16_roi)
     # calculate the temperature
-    higher_temperature = (higher_temperature / 100) - 273.15
-    # higher_temperature = (higher_temperature / 100) * 9 / 5 - 459.67
+    higher_temperature = gray8_image[haar_cascade_circle_origin] / TEMP_RANGE
 
     if higher_temperature < fever_temperature_threshold:
         # white text: normal temperature
         cv2.putText(gray8_image, "{0:.1f} Celsius".format(higher_temperature), (x - 10, y - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1)
+        cv2.circle(gray8_image, haar_cascade_circle_origin, radius, (255, 255, 255), 2)
     else:
         # red text + red circle: fever temperature
         cv2.putText(gray8_image, "{0:.1f} Celsius".format(higher_temperature), (x - 10, y - 10),
