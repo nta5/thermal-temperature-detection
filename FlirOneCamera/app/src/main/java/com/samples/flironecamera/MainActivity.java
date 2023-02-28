@@ -10,8 +10,11 @@
  * ******************************************************************/
 package com.samples.flironecamera;
 
+import static android.os.StrictMode.setThreadPolicy;
+
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -31,7 +34,10 @@ import com.flir.thermalsdk.live.discovery.DiscoveredCamera;
 import com.flir.thermalsdk.live.discovery.DiscoveryEventListener;
 import com.flir.thermalsdk.log.ThermalLog;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -55,10 +61,13 @@ public class MainActivity extends AppCompatActivity {
     //Handles network camera operations
     private CameraHandler cameraHandler;
 
+    private SocketHandler socketHandler;
+
     private Identity connectedIdentity = null;
     private TextView connectionStatus;
     private TextView discoveryStatus;
     private TextView deviceInfo;
+    private TextView tempHolder;
 
     private ImageView msxImage;
     private ImageView photoImage;
@@ -78,6 +87,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        setThreadPolicy(policy);
+
         ThermalLog.LogLevel enableLoggingInDebug = ThermalLog.LogLevel.NONE;
 
         //ThermalSdkAndroid has to be initiated from a Activity with the Application Context to prevent leaking Context,
@@ -89,11 +101,12 @@ public class MainActivity extends AppCompatActivity {
 
         cameraHandler = new CameraHandler();
 
-        setupViews();
+        // TODO - update IP address for socket connection
+        socketHandler = new SocketHandler("10.0.0.193", 8800);
 
-        showSDKversion(ThermalSdkAndroid.getVersion());
-        showSDKCommitHash(ThermalSdkAndroid.getCommitHash());
+        setupViews();
     }
+
 
     @Override
     protected void onPause() {
@@ -284,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
         public void images(Bitmap msxBitmap, Bitmap dcBitmap) {
 
             try {
-                framesBuffer.put(new FrameDataHolder(msxBitmap, dcBitmap));
+                framesBuffer.put(new FrameDataHolder(msxBitmap, dcBitmap, socketHandler, tempHolder));
             } catch (InterruptedException e) {
                 //if interrupted while waiting for adding a new item in the queue
                 Log.e(TAG, "images(), unable to add incoming images to frames buffer, exception:" + e);
@@ -325,22 +338,12 @@ public class MainActivity extends AppCompatActivity {
 
     private final ShowMessage showMessage = message -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
 
-    private void showSDKversion(String version) {
-        TextView sdkVersionTextView = findViewById(R.id.sdk_version);
-        String sdkVersionText = getString(R.string.sdk_version_text, version);
-        sdkVersionTextView.setText(sdkVersionText);
-    }
-
-    private void showSDKCommitHash(String version) {
-        TextView sdkVersionTextView = findViewById(R.id.sdk_commit_hash);
-        String sdkVersionText = getString(R.string.sdk_commit_hash_text, version);
-        sdkVersionTextView.setText(sdkVersionText);
-    }
 
     private void setupViews() {
         connectionStatus = findViewById(R.id.connection_status_text);
         discoveryStatus = findViewById(R.id.discovery_status);
         deviceInfo = findViewById(R.id.device_info_text);
+        tempHolder = findViewById(R.id.temperature);
 
         msxImage = findViewById(R.id.msx_image);
         photoImage = findViewById(R.id.photo_image);

@@ -42,5 +42,11 @@ dependencies {
     implementation 'org.jetbrains:annotations:16.0.2'
     implementation files('/Users/kelly/thermal-sdk-android-java-1.14.2/androidsdk-release.aar')
     implementation files('/Users/kelly/thermal-sdk-android-java-1.14.2/thermalsdk-release.aar')
+
+    implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
+
+    // define any required OkHttp artifacts without version
+    implementation("com.squareup.okhttp3:okhttp")
+    implementation("com.squareup.okhttp3:logging-interceptor")
 }
 

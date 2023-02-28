@@ -11,14 +11,20 @@
 package com.samples.flironecamera;
 
 import android.graphics.Bitmap;
+import android.widget.TextView;
 
 class FrameDataHolder {
 
-    public final Bitmap msxBitmap;
-    public final Bitmap dcBitmap;
+    public static Bitmap msxBitmap = null;
+    public static Bitmap dcBitmap = null;
 
-    FrameDataHolder(Bitmap msxBitmap, Bitmap dcBitmap) {
+    FrameDataHolder(Bitmap msxBitmap, Bitmap dcBitmap, SocketHandler socketHandler, TextView tempHolder) {
         this.msxBitmap = msxBitmap;
         this.dcBitmap = dcBitmap;
+        socketHandler.bitmapInit(this.msxBitmap, tempHolder);
+    }
+
+    public static Bitmap getMsxBitmap(){
+        return msxBitmap;
     }
 }

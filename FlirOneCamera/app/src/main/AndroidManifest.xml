@@ -4,6 +4,8 @@
     <!-- some hw might not support Usb Host mode so it's recommended to add this -->
     <uses-feature android:name="android.hardware.usb.host" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:testOnly="false"
         android:allowBackup="true"
