@@ -22,7 +22,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.flir.thermalsdk.ErrorCode;
 import com.flir.thermalsdk.androidsdk.ThermalSdkAndroid;
@@ -34,10 +38,7 @@ import com.flir.thermalsdk.live.discovery.DiscoveredCamera;
 import com.flir.thermalsdk.live.discovery.DiscoveryEventListener;
 import com.flir.thermalsdk.log.ThermalLog;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -62,6 +63,8 @@ public class MainActivity extends AppCompatActivity {
     private CameraHandler cameraHandler;
 
     private SocketHandler socketHandler;
+    private TemperatureViewModel temperatureViewModel;
+    private LiveData<String> tempValue;
 
     private Identity connectedIdentity = null;
     private TextView connectionStatus;
@@ -101,10 +104,15 @@ public class MainActivity extends AppCompatActivity {
 
         cameraHandler = new CameraHandler();
 
-        // TODO - update IP address for socket connection
-        socketHandler = new SocketHandler("10.0.0.193", 8800);
-
         setupViews();
+
+        // Set up view model for live data
+        temperatureViewModel = new ViewModelProvider(this).get(TemperatureViewModel.class);
+        final Observer<String> tempObserver = newTemp -> tempHolder.setText(getString(R.string.temperature_text, newTemp));
+        temperatureViewModel.getCurrentTemp().observe(this, tempObserver);
+
+        // TODO - update IP address for socket connection
+        socketHandler = new SocketHandler("192.168.1.71", 8800, temperatureViewModel);
     }
 
 
@@ -113,6 +121,12 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         //Always close the connection with a connected FLIR ONE when going into background
         disconnect();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        socketHandler.close();
     }
 
     public void startDiscovery(View view) {
@@ -344,7 +358,6 @@ public class MainActivity extends AppCompatActivity {
         discoveryStatus = findViewById(R.id.discovery_status);
         deviceInfo = findViewById(R.id.device_info_text);
         tempHolder = findViewById(R.id.temperature);
-
         msxImage = findViewById(R.id.msx_image);
         photoImage = findViewById(R.id.photo_image);
     }

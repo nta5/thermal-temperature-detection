@@ -22,10 +22,13 @@ public class SocketHandler {
     private TextView tempHolder;
     private boolean isBitmapInitialized = false;
 
-    public SocketHandler(String address, int port){
+    private TemperatureViewModel temperatureViewModel;
+
+    public SocketHandler(String address, int port, TemperatureViewModel model){
         this.address = address;
         this.port = port;
         this.connect(this.address, this.port);
+        this.temperatureViewModel = model;
     }
 
     public void bitmapInit(Bitmap thermalImg, TextView tempHolder){
@@ -64,7 +67,7 @@ public class SocketHandler {
 
                 int count = 0;
                 while(true) {
-                    Log.d("bitmapInitialized", String.valueOf(isBitmapInitialized));
+//                    Log.d("bitmapInitialized", String.valueOf(isBitmapInitialized));
 
                     while(isBitmapInitialized){
                         count++;
@@ -102,6 +105,7 @@ public class SocketHandler {
 
                             // TODO - replace tempHolder text with incoming data - temperature detected
                             Log.w("Received", "Message from server - " + tempDetected);
+                            temperatureViewModel.getCurrentTemp().postValue(tempDetected);
                         }
                     }
                 }
@@ -112,5 +116,12 @@ public class SocketHandler {
     }
 
 
+    public void close() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
 
