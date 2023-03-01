@@ -85,7 +85,6 @@ if __name__ == "__main__":
                 temp = get_temp("image.jpeg")
 
                 # send temperature back to client
-                print("Result: " + temp)
                 try:
                     temp = float(temp)
                     client_sock.sendall(str(temp).encode())
