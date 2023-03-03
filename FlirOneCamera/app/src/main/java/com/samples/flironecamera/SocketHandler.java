@@ -24,26 +24,26 @@ public class SocketHandler {
 
     private TemperatureViewModel temperatureViewModel;
 
-    public SocketHandler(String address, int port, TemperatureViewModel model){
+    public SocketHandler(String address, int port, TemperatureViewModel model) {
         this.address = address;
         this.port = port;
         this.connect(this.address, this.port);
         this.temperatureViewModel = model;
     }
 
-    public void bitmapInit(Bitmap thermalImg, TextView tempHolder){
+    public void bitmapInit(Bitmap thermalImg, TextView tempHolder) {
         this.thermalImg = thermalImg;
         this.tempHolder = tempHolder;
         isBitmapInitialized = true;
     }
 
-    public void connect(String address, int port){
+    public void connect(String address, int port) {
         Log.w("Connect", "Connecting Socket");
 
         Thread checkUpdate = new Thread(new Runnable() {
             @Override
             public void run() {
-                try{
+                try {
                     socket = new Socket(address, port);
                     Log.w("Socket", "Socket connected");
                 } catch (UnknownHostException e) {
@@ -54,7 +54,7 @@ public class SocketHandler {
                     Log.w("Socket", "Socket connection failed - IOException");
                 }
 
-                try{
+                try {
                     outputStream = new DataOutputStream(socket.getOutputStream());
                     inputStream = new DataInputStream(socket.getInputStream());
                     Log.w("Data", "Output/Input stream created");
@@ -66,12 +66,12 @@ public class SocketHandler {
                 int readByte = 0;
 
                 int count = 0;
-                while(true) {
+                while (true) {
 //                    Log.d("bitmapInitialized", String.valueOf(isBitmapInitialized));
 
-                    while(isBitmapInitialized){
+                    while (isBitmapInitialized) {
                         count++;
-                        if(thermalImg != null){
+                        if (thermalImg != null) {
                             Log.d("thermal", "img not null");
                             ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
                             thermalImg.compress(Bitmap.CompressFormat.JPEG, 100, byteArray);
@@ -89,9 +89,9 @@ public class SocketHandler {
                                 throw new RuntimeException(e);
                             }
 
-                            byte[] buff  = new byte[1024];
+                            byte[] buff = new byte[1024];
                             try {
-                                if((readByte = inputStream.read(buff, 0, 1024)) < 0) break;
+                                if ((readByte = inputStream.read(buff, 0, 1024)) < 0) break;
 //                        readByte = inputStream.read(buff, 0, 1024);
                                 Log.w("Data", "message incoming");
                             } catch (IOException e) {

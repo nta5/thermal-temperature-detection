@@ -13,8 +13,9 @@ import android.graphics.Bitmap;
 import android.util.Log;
 
 import com.flir.thermalsdk.androidsdk.image.BitmapAndroid;
+import com.flir.thermalsdk.image.TemperatureUnit;
 import com.flir.thermalsdk.image.ThermalImage;
-import com.flir.thermalsdk.image.fusion.FusionMode;
+import com.flir.thermalsdk.image.ThermalValue;
 import com.flir.thermalsdk.live.Camera;
 import com.flir.thermalsdk.live.CameraInformation;
 import com.flir.thermalsdk.live.CommunicationInterface;
@@ -27,7 +28,6 @@ import com.flir.thermalsdk.live.remote.Calibration;
 import com.flir.thermalsdk.live.remote.RemoteControl;
 import com.flir.thermalsdk.live.streaming.Stream;
 import com.flir.thermalsdk.live.streaming.ThermalStreamer;
-import com.flir.thermalsdk.utils.Consumer;
 
 import org.jetbrains.annotations.Nullable;
 

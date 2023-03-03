@@ -14,5 +14,4 @@ public class TemperatureViewModel extends ViewModel {
         }
         return currentTemp;
     }
-
 }

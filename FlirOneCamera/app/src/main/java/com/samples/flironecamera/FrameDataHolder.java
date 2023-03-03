@@ -24,7 +24,7 @@ class FrameDataHolder {
         socketHandler.bitmapInit(this.msxBitmap, tempHolder);
     }
 
-    public static Bitmap getMsxBitmap(){
+    public static Bitmap getMsxBitmap() {
         return msxBitmap;
     }
 }
