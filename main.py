@@ -3,6 +3,10 @@ from PIL import Image
 import cv2
 import socket
 
+MIN_TEMP = 25
+MAX_TEMP = 45
+TEMP_RANGE = 255 / (MAX_TEMP - MIN_TEMP)
+
 
 def get_temp(filename):
     gray8_image = cv2.imread(filename, cv2.IMREAD_ANYDEPTH)
@@ -19,16 +23,22 @@ def get_temp(filename):
         # haar cascade center for the circle
         haar_cascade_circle_origin = x + w // 2, y + h // 4
 
-        # The highest human temperature ever recorded is ~43 Celsius degree
-        TEMP_RANGE = 255 / 43
+        try:
+            # calculate the temperature
+            higher_temperature = MIN_TEMP + gray8_image[haar_cascade_circle_origin] / TEMP_RANGE
+        except IndexError as e:
+            print("There was an exception with face detection: " + str(e))
 
-        # calculate the temperature
-        higher_temperature = gray8_image[haar_cascade_circle_origin] / TEMP_RANGE
+        # Allowance for accuracy ±3°C
+        if higher_temperature < 35:
+            higher_temperature += 3
+        elif higher_temperature > 42:
+            higher_temperature -= 3
 
     return higher_temperature
 
 
-if __name__ == "__main__":
+def get_connection():
     server_sock = socket.socket(socket.AF_INET)
     print("Socket successfully created")
 
@@ -113,6 +123,17 @@ if __name__ == "__main__":
 #     # fever temperature threshold in Celsius
 #     fever_temperature_threshold = 38.0
 #
+#     height, width = gray8_image.shape
+#     default_origin = width // 4, height // 9
+#     cv2.circle(gray8_image, default_origin, 5, (255, 255, 255), 2)
+#     print("Range: {:.1f} and {:.1f}".format(numpy.amin(gray8_image), numpy.amax(gray8_image)))
+#     print(gray8_image[default_origin])
+#     print(MIN_TEMP + gray8_image[default_origin] / TEMP_RANGE)
+#     test_origin = width // 2, height // 3 * 2
+#     cv2.circle(gray8_image, test_origin, 5, (255, 255, 255), 2)
+#     print(gray8_image[test_origin])
+#     print(MIN_TEMP + gray8_image[test_origin] / TEMP_RANGE)
+#
 #     higher_temperature = "NOT DETECTED"
 #     # loop over the bounding boxes to measure their temperature
 #     for (x, y, w, h) in faces:
@@ -126,26 +147,34 @@ if __name__ == "__main__":
 #         # circle radius
 #         radius = 2
 #
-#         # The highest human temperature ever recorded is ~43 Celsius degree
-#         TEMP_RANGE = 255 / 43
-#         print(gray8_image[x, y])
-#         print(gray8_image[x, y] / TEMP_RANGE)
-#         print(gray8_image[haar_cascade_circle_origin])
-#         print(gray8_image[haar_cascade_circle_origin] / TEMP_RANGE)
+#         try:
+#             # The highest human temperature ever recorded is ~43 Celsius degree
+#             print(gray8_image[x, y])
+#             print(MIN_TEMP + gray8_image[x, y] / TEMP_RANGE)
+#             print(gray8_image[haar_cascade_circle_origin])
+#             print(MIN_TEMP + gray8_image[haar_cascade_circle_origin] / TEMP_RANGE)
 #
-#         # calculate the temperature
-#         higher_temperature = gray8_image[haar_cascade_circle_origin] / TEMP_RANGE
+#             # calculate the temperature
+#             higher_temperature = MIN_TEMP + gray8_image[haar_cascade_circle_origin] / TEMP_RANGE
 #
-#         if higher_temperature < fever_temperature_threshold:
-#             # white text: normal temperature
-#             cv2.putText(gray8_image, "{0:.1f} Celsius".format(higher_temperature), (x - 10, y - 10),
-#                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1)
-#             cv2.circle(gray8_image, haar_cascade_circle_origin, radius, (255, 255, 255), 2)
-#         else:
-#             # red text + red circle: fever temperature
-#             cv2.putText(gray8_image, "{0:.1f} Celsius".format(higher_temperature), (x - 10, y - 10),
-#                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-#             cv2.circle(gray8_image, haar_cascade_circle_origin, radius, (0, 0, 255), 2)
+#             # Allowance for accuracy ±3°C
+#             if higher_temperature < 35:
+#                 higher_temperature += 3
+#             elif higher_temperature > 42:
+#                 higher_temperature -= 3
+#
+#             if higher_temperature < fever_temperature_threshold:
+#                 # white text: normal temperature
+#                 cv2.putText(gray8_image, "{0:.1f} Celsius".format(higher_temperature), (x - 10, y - 10),
+#                             cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1)
+#                 cv2.circle(gray8_image, haar_cascade_circle_origin, radius, (255, 255, 255), 2)
+#             else:
+#                 # red text + red circle: fever temperature
+#                 cv2.putText(gray8_image, "{0:.1f} Celsius".format(higher_temperature), (x - 10, y - 10),
+#                             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+#                 cv2.circle(gray8_image, haar_cascade_circle_origin, radius, (0, 0, 255), 2)
+#         except IndexError as e:
+#             print("There was an error with face detection: " + str(e))
 #
 #     # color the gray8 image using OpenCV colormaps
 #     gray8_image = cv2.applyColorMap(gray8_image, cv2.COLORMAP_INFERNO)
@@ -154,3 +183,8 @@ if __name__ == "__main__":
 #     cv2.imshow("face-detected", gray8_image)
 #     cv2.waitKey(0)
 #     return higher_temperature
+
+
+if __name__ == "__main__":
+    get_connection()
+    # test_local_file("image.jpeg")
