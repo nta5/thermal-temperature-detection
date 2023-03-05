@@ -154,6 +154,7 @@ class CameraHandler {
         connectedStream = camera.getStreams().get(0);
         if (connectedStream.isThermal()) {
             streamer = new ThermalStreamer(connectedStream);
+            streamer.setAutoScale(false);
         } else {
             Log.e(TAG, "startStream, failed, no thermal stream available for the camera");
             return;
@@ -164,6 +165,10 @@ class CameraHandler {
                     // workaround lambda requiring final object by passing an array of size 1 instead of plain object
                     final Bitmap[] dcBitmap = new Bitmap[1];
                     streamer.withThermalImage(thermalImage -> {
+                        ThermalValue tempMin = new ThermalValue(25, TemperatureUnit.CELSIUS);
+                        ThermalValue tempMax = new ThermalValue(45, TemperatureUnit.CELSIUS);
+                        thermalImage.setTemperatureUnit(TemperatureUnit.CELSIUS);
+                        thermalImage.getScale().setRange(tempMin, tempMax);
                         dcBitmap[0] = BitmapAndroid.createBitmap(
                                 Objects.requireNonNull(
                                         Objects.requireNonNull(
