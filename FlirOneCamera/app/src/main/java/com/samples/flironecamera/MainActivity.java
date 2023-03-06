@@ -22,9 +22,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -64,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
 
     private SocketHandler socketHandler;
     private TemperatureViewModel temperatureViewModel;
-    private LiveData<String> tempValue;
 
     private Identity connectedIdentity = null;
     private TextView connectionStatus;
@@ -155,6 +152,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void performNuc(View view) {
         cameraHandler.performNuc();
+    }
+
+    public void captureImage(View view) {
+        captureImage();
     }
 
     /**
@@ -352,6 +353,14 @@ public class MainActivity extends AppCompatActivity {
 
     private final ShowMessage showMessage = message -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
 
+    private void captureImage() {
+        boolean success = FrameDataHolder.capture();
+        if (success) {
+            // launch new activity
+        } else {
+            MainActivity.this.showMessage.show("Failed to capture image.");
+        }
+    }
 
     private void setupViews() {
         connectionStatus = findViewById(R.id.connection_status_text);

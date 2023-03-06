@@ -1,15 +1,16 @@
 package com.samples.flironecamera;
 
 import android.graphics.Bitmap;
-import android.os.Looper;
 import android.util.Log;
 import android.widget.TextView;
 
-import java.io.*;
-import java.net.*;
-import java.util.Objects;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 
 public class SocketHandler {
     private String address;
@@ -65,23 +66,20 @@ public class SocketHandler {
 
                 int readByte = 0;
 
-                int count = 0;
                 while (true) {
 //                    Log.d("bitmapInitialized", String.valueOf(isBitmapInitialized));
-
                     while (isBitmapInitialized) {
-                        count++;
                         if (thermalImg != null) {
                             Log.d("thermal", "img not null");
                             ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
                             thermalImg.compress(Bitmap.CompressFormat.JPEG, 100, byteArray);
                             byte[] bitmapBytes = byteArray.toByteArray();
-                            Log.w("Data", bitmapBytes.length + " bitmap length");
+//                            Log.w("Data", bitmapBytes.length + " bitmap length");
 
                             try {
                                 outputStream.write(bitmapBytes);
                                 outputStream.flush();
-                                outputStream.writeBytes("\r\n\r\n");
+                                outputStream.writeBytes("\r\n\r\n\r\n");
                                 outputStream.flush();
                                 Log.w("Data", "image out");
                             } catch (IOException e) {
@@ -92,7 +90,6 @@ public class SocketHandler {
                             byte[] buff = new byte[1024];
                             try {
                                 if ((readByte = inputStream.read(buff, 0, 1024)) < 0) break;
-//                        readByte = inputStream.read(buff, 0, 1024);
                                 Log.w("Data", "message incoming");
                             } catch (IOException e) {
                                 Log.w("Data", "Message read fail - IOException");
@@ -103,11 +100,79 @@ public class SocketHandler {
                             System.arraycopy(buff, 0, temp, 0, readByte);
                             String tempDetected = new String(temp);
 
-                            // TODO - replace tempHolder text with incoming data - temperature detected
                             Log.w("Received", "Message from server - " + tempDetected);
                             temperatureViewModel.getCurrentTemp().postValue(tempDetected);
                         }
                     }
+                }
+            }
+        });
+
+        checkUpdate.start();
+    }
+
+    public void capture() {
+        Thread checkUpdate = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Socket captureSocket = null;
+                DataOutputStream captureOutput = null;
+                DataInputStream captureInput = null;
+                try {
+                    captureSocket = new Socket(address, port);
+                    Log.w("DEBUG", "Socket connected");
+                    captureOutput = new DataOutputStream(captureSocket.getOutputStream());
+                    captureInput = new DataInputStream(captureSocket.getInputStream());
+                    Log.w("DEBUG", "Output/Input stream created");
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                    Log.w("DEBUG", "Socket connection failed - UnknownHost");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Log.w("DEBUG", "Socket connection failed - IOException");
+                }
+
+                int readByte = 0;
+                try {
+                    while (true) {
+//                    Log.d("bitmapInitialized", String.valueOf(isBitmapInitialized));
+                        ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
+                        thermalImg.compress(Bitmap.CompressFormat.JPEG, 100, byteArray);
+                        byte[] bitmapBytes = byteArray.toByteArray();
+
+                        try {
+                            captureOutput.writeBytes("Capture");
+                            captureOutput.write(bitmapBytes);
+                            captureOutput.flush();
+                            captureOutput.writeBytes("\r\n\r\n\r\n");
+                            captureOutput.flush();
+                            Log.w("DEBUG", "capture out");
+                        } catch (IOException e) {
+                            Log.w("DEBUG", "Message send fail - IOException");
+                        }
+
+                        byte[] buff = new byte[200000];
+                        int off = 0;
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        try {
+                            while ((readByte = captureInput.read(buff)) != -1) {
+                                Log.w("DEBUG", "capture message incoming");
+                                out.write(buff, off, readByte);
+                                off += readByte;
+                                String s = new String(buff, StandardCharsets.UTF_8);
+                                if (s.contains("\r\n\r\n\r\n")) break;
+                                Log.w("DEBUG", "Read length: " + off);
+                            }
+                        } catch (IOException e) {
+                            Log.w("DEBUG", "Message read fail - IOException: " + e.getMessage());
+                        }
+
+                        Log.d("DEBUG", "Written");
+                        captureSocket.close();
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         });

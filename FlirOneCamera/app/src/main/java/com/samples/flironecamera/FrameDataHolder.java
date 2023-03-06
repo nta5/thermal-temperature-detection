@@ -17,11 +17,21 @@ class FrameDataHolder {
 
     public static Bitmap msxBitmap = null;
     public static Bitmap dcBitmap = null;
+    public static SocketHandler socketHandler = null;
+    public static TextView tempHolder = null;
 
     FrameDataHolder(Bitmap msxBitmap, Bitmap dcBitmap, SocketHandler socketHandler, TextView tempHolder) {
         this.msxBitmap = msxBitmap;
         this.dcBitmap = dcBitmap;
-        socketHandler.bitmapInit(this.msxBitmap, tempHolder);
+        this.socketHandler = socketHandler;
+        this.tempHolder = tempHolder;
+        socketHandler.bitmapInit(msxBitmap, tempHolder);
+    }
+
+    public static boolean capture() {
+        if (socketHandler == null || tempHolder == null) return false;
+        socketHandler.capture();
+        return true;
     }
 
     public static Bitmap getMsxBitmap() {
