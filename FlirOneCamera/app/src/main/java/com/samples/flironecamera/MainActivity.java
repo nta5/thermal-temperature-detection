@@ -12,6 +12,7 @@ package com.samples.flironecamera;
 
 import static android.os.StrictMode.setThreadPolicy;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.StrictMode;
@@ -24,7 +25,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.flir.thermalsdk.ErrorCode;
 import com.flir.thermalsdk.androidsdk.ThermalSdkAndroid;
@@ -104,14 +104,10 @@ public class MainActivity extends AppCompatActivity {
         setupViews();
 
         // Set up view model for live data
-        temperatureViewModel = new ViewModelProvider(this).get(TemperatureViewModel.class);
+        temperatureViewModel = TemperatureViewModel.getInstance();
         final Observer<String> tempObserver = newTemp -> tempHolder.setText(getString(R.string.temperature_text, newTemp));
         temperatureViewModel.getCurrentTemp().observe(this, tempObserver);
-
-        // TODO - update IP address for socket connection
-        socketHandler = new SocketHandler("192.168.1.71", 8800, temperatureViewModel);
     }
-
 
     @Override
     protected void onPause() {
@@ -128,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void startDiscovery(View view) {
         startDiscovery();
+        startSocketConnection();
     }
 
     public void stopDiscovery(View view) {
@@ -245,6 +242,7 @@ public class MainActivity extends AppCompatActivity {
         connectedIdentity = null;
         new Thread(() -> {
             cameraHandler.disconnect();
+            if (socketHandler != null) socketHandler.close();
             runOnUiThread(() -> updateConnectionText(null, "DISCONNECTED"));
         }).start();
     }
@@ -353,10 +351,20 @@ public class MainActivity extends AppCompatActivity {
 
     private final ShowMessage showMessage = message -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
 
+    private void startSocketConnection() {
+        if (socketHandler != null && socketHandler.isConnected()) socketHandler.close();
+        try {
+            socketHandler = new SocketHandler("192.168.1.71", 8800, temperatureViewModel);
+        } catch (Exception e) {
+            MainActivity.this.showMessage.show("Failed to establish a connection with server.");
+        }
+    }
+
     private void captureImage() {
         boolean success = FrameDataHolder.capture();
         if (success) {
-            // launch new activity
+            Intent intent = new Intent(this, CaptureImageActivity.class);
+            startActivity(intent);
         } else {
             MainActivity.this.showMessage.show("Failed to capture image.");
         }

@@ -38,6 +38,10 @@ public class SocketHandler {
         isBitmapInitialized = true;
     }
 
+    public boolean isConnected() {
+        return socket != null && socket.isConnected();
+    }
+
     public void connect(String address, int port) {
         Log.w("Connect", "Connecting Socket");
 
@@ -67,42 +71,47 @@ public class SocketHandler {
                 int readByte = 0;
 
                 while (true) {
+                    try {
 //                    Log.d("bitmapInitialized", String.valueOf(isBitmapInitialized));
-                    while (isBitmapInitialized) {
-                        if (thermalImg != null) {
-                            Log.d("thermal", "img not null");
-                            ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
-                            thermalImg.compress(Bitmap.CompressFormat.JPEG, 100, byteArray);
-                            byte[] bitmapBytes = byteArray.toByteArray();
+                        while (isBitmapInitialized) {
+                            if (thermalImg != null) {
+                                Log.d("thermal", "img not null");
+                                ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
+                                thermalImg.compress(Bitmap.CompressFormat.JPEG, 100, byteArray);
+                                byte[] bitmapBytes = byteArray.toByteArray();
 //                            Log.w("Data", bitmapBytes.length + " bitmap length");
 
-                            try {
-                                outputStream.write(bitmapBytes);
-                                outputStream.flush();
-                                outputStream.writeBytes("\r\n\r\n\r\n");
-                                outputStream.flush();
-                                Log.w("Data", "image out");
-                            } catch (IOException e) {
-                                Log.w("Data", "Message send fail - IOException");
-                                throw new RuntimeException(e);
+                                try {
+                                    outputStream.write(bitmapBytes);
+                                    outputStream.flush();
+                                    outputStream.writeBytes("\r\n\r\n\r\n");
+                                    outputStream.flush();
+                                    Log.w("Data", "image out");
+                                } catch (IOException e) {
+                                    Log.w("Data", "Message send fail - IOException");
+                                    throw new RuntimeException(e);
+                                }
+
+                                byte[] buff = new byte[1024];
+                                try {
+                                    if ((readByte = inputStream.read(buff, 0, 1024)) < 0) break;
+                                    Log.w("Data", "message incoming");
+                                } catch (IOException e) {
+                                    Log.w("Data", "Message read fail - IOException");
+                                    throw new RuntimeException(e);
+                                }
+
+                                byte[] temp = new byte[readByte];
+                                System.arraycopy(buff, 0, temp, 0, readByte);
+                                String tempDetected = new String(temp);
+
+                                Log.w("Received", "Message from server - " + tempDetected);
+                                temperatureViewModel.getCurrentTemp().postValue(tempDetected);
                             }
-
-                            byte[] buff = new byte[1024];
-                            try {
-                                if ((readByte = inputStream.read(buff, 0, 1024)) < 0) break;
-                                Log.w("Data", "message incoming");
-                            } catch (IOException e) {
-                                Log.w("Data", "Message read fail - IOException");
-                                throw new RuntimeException(e);
-                            }
-
-                            byte[] temp = new byte[readByte];
-                            System.arraycopy(buff, 0, temp, 0, readByte);
-                            String tempDetected = new String(temp);
-
-                            Log.w("Received", "Message from server - " + tempDetected);
-                            temperatureViewModel.getCurrentTemp().postValue(tempDetected);
                         }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        break;
                     }
                 }
             }
@@ -151,23 +160,24 @@ public class SocketHandler {
                             Log.w("DEBUG", "Message send fail - IOException");
                         }
 
-                        byte[] buff = new byte[200000];
+                        byte[] buff = new byte[400000];
                         int off = 0;
                         ByteArrayOutputStream out = new ByteArrayOutputStream();
                         try {
                             while ((readByte = captureInput.read(buff)) != -1) {
-                                Log.w("DEBUG", "capture message incoming");
-                                out.write(buff, off, readByte);
+                                out.write(buff, 0, readByte);
                                 off += readByte;
+                                Log.w("DEBUG", "Read length: " + off);
                                 String s = new String(buff, StandardCharsets.UTF_8);
                                 if (s.contains("\r\n\r\n\r\n")) break;
-                                Log.w("DEBUG", "Read length: " + off);
                             }
                         } catch (IOException e) {
                             Log.w("DEBUG", "Message read fail - IOException: " + e.getMessage());
                         }
 
+                        byte[] imageBytes = out.toByteArray();
                         Log.d("DEBUG", "Written");
+                        temperatureViewModel.getImageByte().postValue(imageBytes);
                         captureSocket.close();
                         break;
                     }
