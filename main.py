@@ -2,10 +2,15 @@ import io
 from PIL import Image
 import cv2
 import socket
+import numpy
+import threading
+import struct
+
 
 MIN_TEMP = 25
 MAX_TEMP = 45
 TEMP_RANGE = 255 / (MAX_TEMP - MIN_TEMP)
+gray8_image = cv2.imread("image.jpeg", cv2.IMREAD_ANYDEPTH)
 
 
 def get_temp(filename):
@@ -38,6 +43,63 @@ def get_temp(filename):
     return higher_temperature
 
 
+def connect_client(client_sock: socket):
+    # flag to detect the end of each frame
+    flag = "\r\n\r\n\r\n"
+    capture_signal = "Capture"
+    is_capture = False
+    count = 0
+    datalist = []
+    while True:
+        data = client_sock.recv(1024)
+
+        if data.startswith(str.encode(capture_signal)) != 0:
+            is_capture = True
+            data = data.split(str.encode(capture_signal))[1]
+            datalist.append(data)
+            continue
+
+        datalist.append(data)
+
+        count += len(data)
+
+        # if no data left
+        if len(data) <= 0:
+            break
+
+        if data.endswith(str.encode(flag)):
+            # save img to the working directory
+            byte_stream = io.BytesIO(b''.join(datalist))
+            img = Image.open(byte_stream)
+            img.save("image.jpeg")
+
+            # get temperature from the image
+            temp = get_temp("image.jpeg")
+
+            # send temperature back to client
+            try:
+                if is_capture:
+                    img.save("image-1.jpeg")
+                    # JPEG-encode into memory buffer and get size
+                    _, buffer = cv2.imencode('.jpeg', gray8_image)
+                    # Converting the array to bytes.
+                    byte_encode = buffer.tobytes()
+                    client_sock.sendall(byte_encode)
+                    client_sock.sendall(flag.encode())
+                else:
+                    temp = float(temp)
+                    client_sock.sendall((str(temp) + flag).encode())
+            except ValueError as e:
+                client_sock.sendall((temp + flag).encode())
+
+            # reset img size and data list
+            count = 0
+            datalist = []
+
+    # Close the connection with the client
+    client_sock.close()
+
+
 def get_connection():
     server_sock = socket.socket(socket.AF_INET)
     print("Socket successfully created")
@@ -60,56 +122,8 @@ def get_connection():
         client_sock, addr = server_sock.accept()
         print('Got connection from', addr)
 
-        # data = client_sock.recv(1024)
-        # length = data.decode()
-        #
-        # print("image length: " + length)
-
-        # send a thankyou message to the client. encoding to send byte type.
-        client_sock.send('Thank you for connecting'.encode())
-
-        count = 0
-        datalist = []
-        while True:
-            data = client_sock.recv(1024)
-            datalist.append(data)
-
-            count += len(data)
-
-            # if no data left
-            if len(data) <= 0:
-                break
-
-            # flag to detect the end of each frame
-            flag = "\r\n\r\n"
-            if data.endswith(str.encode(flag)):
-                # img size
-                # print("total length:" + str(count))
-
-                # save img to the working directory
-                byte_stream = io.BytesIO(b''.join(datalist))
-                img = Image.open(byte_stream)
-                img.save("image.jpeg")
-
-                # get temperature from the image
-                temp = get_temp("image.jpeg")
-
-                # send temperature back to client
-                try:
-                    temp = float(temp)
-                    client_sock.sendall(str(temp).encode())
-                except ValueError as e:
-                    client_sock.sendall(temp.encode())
-
-                # reset img size and data list
-                count = 0
-                datalist = []
-
-        # Close the connection with the client
-        client_sock.close()
-
-        # Breaking once connection closed
-        break
+        x = threading.Thread(target=connect_client, args=(client_sock, ))
+        x.start()
 
 
 # def test_local_file(filename):
